@@ -1,0 +1,32 @@
+name: Testar Superciga
+
+on:
+  push:
+    paths:
+      - 'Superciga/**'
+      - '.github/workflows/superciga-test.yml'
+  pull_request:
+    paths:
+      - 'Superciga/**'
+      - '.github/workflows/superciga-test.yml'
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    name: Teste básico do app
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validar sintaxe
+        run: python -m py_compile Superciga/main.py Superciga/superciga_lite.py
+
+      - name: Rodar testes básicos
+        run: python Superciga/tests/test_superciga_lite.py
