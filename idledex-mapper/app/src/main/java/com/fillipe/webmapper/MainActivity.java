@@ -212,16 +212,16 @@ public class MainActivity extends Activity {
   function parsePokemon(root) {
     const text = clean(root?.innerText || root?.textContent || '', 12000);
     const headings=[...root.querySelectorAll?.('h1,h2,h3,h4,[role="heading"]')||[]].filter(visible).map(txt).filter(Boolean);
-    const quality=(text.match(/\b(EXCEPCIONAL|EXCELENTE|ÓTIMO|OTIMO|MUITO BOM|BOM|REGULAR|RUIM)\b/i)||[])[1]||'';
-    const ivm=text.match(/\bIV(?:s| total)?\b[^0-9]{0,30}(\d{1,3})\s*\/\s*186/i) || text.match(/(\d{1,3})\s*\/\s*186/);
-    const nature=(text.match(/Nature\s*[:\-]?\s*([A-Za-zÀ-ÿ]+)/i)||[])[1]||'';
-    const level=(text.match(/(?:Nível|Nivel|Lv\.?|Level)\s*[:\-]?\s*(\d{1,3})/i)||[])[1]||'';
+    const quality=(text.match(/(EXCEPCIONAL|EXCELENTE|ÓTIMO|OTIMO|MUITO BOM|BOM|REGULAR|RUIM)/i)||[])[1]||'';
+    const ivm=text.match(/IV(?:s| total)?[^0-9]{0,30}([0-9]{1,3}) *[/] *186/i) || text.match(/([0-9]{1,3}) *[/] *186/);
+    const nature=(text.match(/Nature *[:-]? *([A-Za-zÀ-ÿ]+)/i)||[])[1]||'';
+    const level=(text.match(/(?:Nível|Nivel|Lv[.]?|Level) *[:-]? *([0-9]{1,3})/i)||[])[1]||'';
     const locked=interactive().some(el => /^Destravar$/i.test(txt(el)));
-    const shiny=/\bshiny\b/i.test(text);
+    const shiny=/shiny/i.test(text);
     const generic=/^(Detalhes|Golpes|Equipe|Box|Pokémon|Pokemon|Informações|Informacoes)$/i;
     let species=headings.find(h => !generic.test(h) && h.length<60) || '';
     if (!species) {
-      const m=text.match(/^([A-Za-zÀ-ÿ0-9♀♂ .'-]{2,40})\s+(?:Lv\.?|Nível|Nivel|Level)\s*\d+/i);
+      const m=text.match(/^([A-Za-zÀ-ÿ0-9♀♂ .'-]{2,40}) +(Lv[.]?|Nível|Nivel|Level) *[0-9]+/i);
       if (m) species=clean(m[1],60);
     }
     return {species, quality, iv: ivm?parseInt(ivm[1],10):null, nature, level:level?parseInt(level,10):null, shiny, locked, text};
@@ -312,14 +312,12 @@ public class MainActivity extends Activity {
     if(window.IdleCompanion.busy) { IdleAndroid.pushStatus('Já estou analisando a Box.'); return; }
     window.IdleCompanion.busy=true;
     const processed=new Set(), seenPages=new Set();
-    let countBefore=0;
     try {
       IdleAndroid.pushStatus('Abrindo Box…');
       await openBox();
       let pages=0;
       while(pages++<30){
         const fp=pageFingerprint(); if(fp) seenPages.add(fp);
-        countBefore=processed.size;
         IdleAndroid.pushStatus('Analisando Box · página '+pages+'…');
         await scanPage(processed);
         if(!(await nextPage(seenPages))) break;
