@@ -9,9 +9,9 @@ android {
     defaultConfig {
         applicationId 'com.fillipe.idledexcompanion'
         minSdk 24
-        targetSdk 35
-        versionCode 21
-        versionName '2.0.1'
+        targetSdk 29
+        versionCode 22
+        versionName '2.0.2'
     }
 
     buildFeatures {
