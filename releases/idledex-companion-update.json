@@ -1,7 +1,7 @@
 {
-  "versionCode": 20,
-  "versionName": "2.0.0",
-  "apkUrl": "https://drive.google.com/uc?export=download&id=1i7CclvsqV_UHAS3hnk2nz-heUgU720M5",
-  "sha256": "af7848009fd63284dcfded7813c65589c9b56fedb43f4ec7dba6d830addc83a5",
-  "notes": "Painel novo, perfis prontos, fila segura, dupla leitura, STOP de emergência e proteções reforçadas."
+  "versionCode": 21,
+  "versionName": "2.0.1",
+  "apkUrl": "https://drive.google.com/uc?export=download&id=11txvP5KSQ2H69IkZb9ngWsY0a_KWkgHX",
+  "sha256": "e072d75d0f035c407f36cc5366e235f9d254d498e3ac86aa5da8b786034df05e",
+  "notes": "Correção de instalação: pacote dedicado do IdleDex Companion, mantendo o sistema de atualização para as próximas versões."
 }
