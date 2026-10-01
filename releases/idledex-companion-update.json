@@ -1,7 +1,7 @@
 {
-  "versionCode": 21,
-  "versionName": "2.0.1",
-  "apkUrl": "https://drive.google.com/uc?export=download&id=11txvP5KSQ2H69IkZb9ngWsY0a_KWkgHX",
-  "sha256": "e072d75d0f035c407f36cc5366e235f9d254d498e3ac86aa5da8b786034df05e",
-  "notes": "Correção de instalação: pacote dedicado do IdleDex Companion, mantendo o sistema de atualização para as próximas versões."
+  "versionCode": 22,
+  "versionName": "2.0.2",
+  "apkUrl": "https://drive.google.com/uc?export=download&id=1Zlvx3CUSlfMhMixmy7p3T8ZgYHOF-7ju",
+  "sha256": "7e8cc102c3c2fd9c0afa4790c786291e050214679adb29d5d35a69d437481cf9",
+  "notes": "Correção de instalação no Android: compatibilidade de assinatura para sideload e fluxo de atualização interna preparado."
 }
