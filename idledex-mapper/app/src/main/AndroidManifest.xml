@@ -4,7 +4,7 @@
 
     <application
         android:allowBackup="false"
-        android:label="IdleDex Mapper"
+        android:label="IdleDex Companion"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
