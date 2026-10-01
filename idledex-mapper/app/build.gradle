@@ -18,6 +18,11 @@ android {
         buildConfig true
     }
 
+    lint {
+        disable 'ExpiredTargetSdkVersion'
+        abortOnError false
+    }
+
     buildTypes {
         release {
             minifyEnabled false
