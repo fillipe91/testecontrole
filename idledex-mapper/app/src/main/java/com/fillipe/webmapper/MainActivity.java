@@ -2,9 +2,13 @@ package com.fillipe.webmapper;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -61,7 +65,7 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(true);
-        settings.setUserAgentString(settings.getUserAgentString() + " IdleDexMapper/0.1");
+        settings.setUserAgentString(settings.getUserAgentString() + " IdleDexMapper/0.2");
 
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new MapperBridge(), "AndroidMapper");
@@ -97,7 +101,7 @@ public class MainActivity extends Activity {
                 "var p=el.parentElement;" +
                 "return {i:i,tag:(el.tagName||'').toLowerCase(),id:clean(el.id,120),className:cls(el),role:clean(el.getAttribute&&el.getAttribute('role'),80),name:clean(el.getAttribute&&el.getAttribute('name'),100),type:clean(el.getAttribute&&el.getAttribute('type'),60),placeholder:clean(el.getAttribute&&el.getAttribute('placeholder'),140),ariaLabel:clean(el.getAttribute&&el.getAttribute('aria-label'),140),title:clean(el.getAttribute&&el.getAttribute('title'),140),href:el.href?clean(el.href,240):'',text:clean(el.innerText||el.textContent,180),visible:!!(r&&r.width>0&&r.height>0),rect:r?{x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)}:null,parent:p?{tag:(p.tagName||'').toLowerCase(),id:clean(p.id,100),className:cls(p)}:null};" +
                 "});" +
-                "var data={version:1,ts:new Date().toISOString(),url:location.href,title:document.title,elementCount:nodes.length,elements:elements};" +
+                "var data={version:2,ts:new Date().toISOString(),url:location.href,title:document.title,elementCount:nodes.length,elements:elements};" +
                 "AndroidMapper.pushSnapshot(JSON.stringify(data));" +
                 "}catch(e){AndroidMapper.pushError(String(e));}}" +
                 "window.__IDMAPPER_SCAN=scan;var timer=null;" +
@@ -112,11 +116,11 @@ public class MainActivity extends Activity {
         webView.evaluateJavascript(js, null);
     }
 
-    private void exportMap() {
+    private void preparePayload() {
         try {
             JSONObject root = new JSONObject();
             root.put("app", "IdleDex Mapper");
-            root.put("version", "0.1.0");
+            root.put("version", "0.2.0");
             root.put("note", "Read-only UI structure map. No passwords, cookies, localStorage or input values are exported.");
             JSONArray arr = new JSONArray();
             synchronized (snapshots) {
@@ -128,6 +132,46 @@ public class MainActivity extends Activity {
             exportPayload = root.toString(2);
         } catch (JSONException e) {
             exportPayload = "{\"error\":\"Could not prepare export\"}";
+        }
+    }
+
+    private void exportMap() {
+        preparePayload();
+        byte[] bytes = exportPayload.getBytes(StandardCharsets.UTF_8);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Downloads.DISPLAY_NAME, "idledex-ui-map.json");
+                values.put(MediaStore.Downloads.MIME_TYPE, "application/json");
+                values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/IdleDexMapper");
+                values.put(MediaStore.Downloads.IS_PENDING, 1);
+
+                Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                if (uri == null) throw new IllegalStateException("Não foi possível criar o arquivo em Downloads");
+
+                try (OutputStream out = getContentResolver().openOutputStream(uri, "w")) {
+                    if (out == null) throw new IllegalStateException("Não foi possível abrir o arquivo para gravação");
+                    out.write(bytes);
+                    out.flush();
+                }
+
+                ContentValues done = new ContentValues();
+                done.put(MediaStore.Downloads.IS_PENDING, 0);
+                getContentResolver().update(uri, done, null, null);
+
+                long kb = Math.max(1, Math.round(bytes.length / 1024.0));
+                status.setText("Mapa salvo em Downloads/IdleDexMapper (" + kb + " KB). Escolha Google Drive para enviar.");
+
+                Intent share = new Intent(Intent.ACTION_SEND);
+                share.setType("application/json");
+                share.putExtra(Intent.EXTRA_STREAM, uri);
+                share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(Intent.createChooser(share, "Enviar mapa para..."));
+                return;
+            } catch (Exception e) {
+                status.setText("Falha ao salvar em Downloads: " + e.getMessage() + ". Escolha onde salvar.");
+            }
         }
 
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
@@ -143,10 +187,13 @@ public class MainActivity extends Activity {
         if (requestCode == CREATE_MAP_FILE && resultCode == RESULT_OK && data != null) {
             Uri uri = data.getData();
             if (uri == null) return;
-            try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+            try (OutputStream out = getContentResolver().openOutputStream(uri, "w")) {
                 if (out != null) {
-                    out.write(exportPayload.getBytes(StandardCharsets.UTF_8));
-                    status.setText("Mapa exportado. Envie o arquivo JSON aqui no ChatGPT.");
+                    byte[] bytes = exportPayload.getBytes(StandardCharsets.UTF_8);
+                    out.write(bytes);
+                    out.flush();
+                    long kb = Math.max(1, Math.round(bytes.length / 1024.0));
+                    status.setText("Mapa exportado com " + kb + " KB.");
                 }
             } catch (Exception e) {
                 status.setText("Falha ao exportar: " + e.getMessage());
