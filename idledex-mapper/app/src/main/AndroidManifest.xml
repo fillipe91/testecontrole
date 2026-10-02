@@ -9,8 +9,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
+
         <activity
-            android:name=".MainActivity"
+            android:name=".CompanionHomeActivity"
             android:exported="true"
             android:screenOrientation="unspecified">
             <intent-filter>
@@ -18,5 +19,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:screenOrientation="unspecified" />
+
+        <activity
+            android:name=".SafeSellActivity"
+            android:exported="false"
+            android:screenOrientation="unspecified" />
     </application>
 </manifest>
