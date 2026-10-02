@@ -4,7 +4,8 @@
   if(location.origin!=='https://idledex.com' || location.pathname!=='/play')return;
   if(window.IdleBoxAudit)return;
   const R=window.IdleBoxReader, sleep=ms=>new Promise(r=>setTimeout(r,ms));
-  let running=false, cancelled=false, token='';
+  let running=false, cancelled=false, token='', autoConfirmed=true;
+  function checkAuto(){if(R.assertAutoPaused()===false){if(autoConfirmed)send('status',{message:'AUTO não confirmado. Leitura somente em simulação; resultado ficará incompleto, sem candidatos à venda.'});autoConfirmed=false;}}
   const check=()=>{if(cancelled||IdleSell.isStopped(token))throw Error('Auditoria parada. Resultados parciais não autorizam venda.');};
   const send=(kind,payload)=>IdleSell.report(token,kind,JSON.stringify(payload));
   async function waitFor(fn,message){for(let i=0;i<40;i++){check();try{if(fn())return;}catch(e){}await sleep(100);}throw Error(message);}
@@ -22,7 +23,7 @@
   }
   async function firstPage(){for(let i=0;i<250 && R.page().number>1;i++){check();let n=R.page().number;R.box().querySelector('[aria-label="Página anterior"]').click();await waitFor(()=>R.page().number===n-1,'Página anterior não respondeu.');}if(R.page().number!==1)throw Error('Primeira página não confirmada.');}
   async function pass(round,readDetails){
-    R.assertAutoPaused();await firstPage();R.assertUnfiltered();const initial=R.page(), team=R.teams(), rows=[], cards=new Map(), ids=new Set();
+    checkAuto();await firstPage();R.assertUnfiltered();const initial=R.page(), team=R.teams(), rows=[], cards=new Map(), ids=new Set();
     const saved=savedSpecies(team);
     const add=async id=>{if(ids.has(id))throw Error('ID repetido entre páginas/equipe.');ids.add(id);check();
       let p=R.card(id);cards.set(id,cardSignature(p));p.savedSpecies=saved.has(String(p.speciesKey||''));
@@ -34,7 +35,7 @@
     if(initial.total>0 && pageSize===0)throw Error('Box informa Pokémon, mas não mostra cartões na primeira página.');
     if(initial.ids.some(id=>!id) || new Set(initial.ids).size!==initial.ids.length)throw Error('ID ausente ou repetido nos cartões da Box.');
     for(let n=1;n<=initial.pages;n++){
-      check();R.assertAutoPaused();R.assertUnfiltered();const current=R.page();
+      check();checkAuto();R.assertUnfiltered();const current=R.page();
       if(current.number!==n || current.total!==initial.total || current.pages!==initial.pages)throw Error('Coleção mudou durante a leitura. Refaça a auditoria.');
       const expected=Math.min(pageSize,initial.total-(n-1)*pageSize);
       if(current.ids.length!==expected)throw Error('Quantidade de cartões diverge da página.');
@@ -49,9 +50,9 @@
     return {rows,cards,team,total:initial.total,pages:initial.pages};
   }
   async function start(runToken){
-    if(running)return;running=true;cancelled=false;token=runToken;
+    if(running)return;running=true;cancelled=false;token=runToken;autoConfirmed=true;
     try{
-      R.assertAutoPaused();
+      checkAuto();
       if(!document.querySelector('.eb-modal')){const b=[...document.querySelectorAll('button')].filter(e=>e.textContent.trim()==='Box');if(b.length!==1)throw Error('Abra a Box manualmente.');b[0].click();await waitFor(()=>!!document.querySelector('.eb-modal'),'Box não abriu.');}
       const filters=R.box().querySelector('[data-testid="creature-filters-toggle"]');if(filters?.getAttribute('aria-expanded')==='false'){filters.click();await sleep(150);}
       R.assertUnfiltered();send('status',{message:'Leitura 1 de 2 · verificando cada ID'});
@@ -59,7 +60,7 @@
       const first=new Map(a.rows.map(p=>[p.id,p]));
       const stable=a.total===b.total && a.rows.length===b.rows.length && JSON.stringify(a.team)===JSON.stringify(b.team) && b.rows.every(p=>first.has(p.id)&&a.cards.get(p.id)===b.cards.get(p.id));
       const second=new Map(b.rows.map(p=>[p.id,p]));
-      check();send('complete',{rows:a.rows.map(p=>({pokemon:p,consistent:stable&&second.has(p.id)&&R.signature(p)===R.signature(second.get(p.id))&&!p.readError&&!second.get(p.id).readError})),complete:stable,teams:b.team,pages:b.pages,total:b.total});
+      check();send('complete',{rows:a.rows.map(p=>({pokemon:p,consistent:stable&&second.has(p.id)&&R.signature(p)===R.signature(second.get(p.id))&&!p.readError&&!second.get(p.id).readError})),complete:stable&&autoConfirmed,autoConfirmed,teams:b.team,pages:b.pages,total:b.total});
     }catch(e){send('error',{message:String(e.message||e)});}finally{running=false;}
   }
   window.IdleBoxAudit={start,stop:()=>{cancelled=true;}};

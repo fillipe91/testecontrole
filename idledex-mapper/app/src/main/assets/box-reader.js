@@ -8,11 +8,26 @@
     if (all.length !== 1) throw Error('Abra Equipe & Box. Painel único não encontrado.');
     return all[0];
   }
+  function autoState() {
+    // Accessible action names change when AUTO is paused. Missing is not OFF.
+    const toggles=[...document.querySelectorAll('[aria-label="Desativar modo automático"], [aria-label="Ativar modo automático"]')];
+    if(toggles.length!==1)return 'unknown';
+    const e=toggles[0], states=[];
+    if(e.tagName==='INPUT' && e.type==='checkbox')states.push(e.checked ? 'running':'paused');
+    const aria=e.getAttribute('aria-checked'), data=e.getAttribute('data-state');
+    if(aria==='true'||aria==='false')states.push(aria==='true'?'running':'paused');
+    if(data==='checked'||data==='unchecked')states.push(data==='checked'?'running':'paused');
+    // A positive resume action is evidence of pause; never infer OFF from a
+    // missing checked attribute on an arbitrary element.
+    if(e.getAttribute('aria-label')==='Ativar modo automático')states.push('paused');
+    if(states.length===0 || new Set(states).size!==1)return 'unknown';
+    return states[0];
+  }
   function assertAutoPaused() {
-    const toggles=[...document.querySelectorAll('[aria-label="Desativar modo automático"]')];
-    if(toggles.length!==1) throw Error('Não foi possível confirmar o estado do AUTO. Pause-o manualmente antes da auditoria.');
-    const e=toggles[0], checked=e.checked===true || e.getAttribute('aria-checked')==='true' || e.getAttribute('data-state')==='checked';
-    if(checked) throw Error('O AUTO está ligado e pode mudar a Box durante a leitura. Pause-o manualmente e tente novamente.');
+    const state=autoState();
+    if(state==='running')throw Error('O AUTO está ligado e pode mudar a Box durante a leitura. Pause-o manualmente e tente novamente.');
+    // Unknown may be inspected in read-only simulation, never treated as verified.
+    return state==='paused';
   }
   function page() {
     const root = box(), p = text(root.querySelector('.eb-pager-info')).match(/^(\d+)\s*\/\s*(\d+)$/);
@@ -84,5 +99,5 @@
     if(filters.length!==9 || filters.some(e=>text(e.querySelector('.ui-select-value'))!=='Todas')) throw Error('Limpe todos os filtros antes de auditar.');
     if(text(controls.querySelector('[aria-label="Ordenar a Box"] .ui-select-value'))!=='Ordem da Box') throw Error('Escolha Ordem da Box antes de auditar.');
   }
-  scope.IdleBoxReader={box,page,teams,card,detail,signature,assertUnfiltered,assertAutoPaused};
+  scope.IdleBoxReader={box,page,teams,card,detail,signature,assertUnfiltered,autoState,assertAutoPaused};
 })(typeof module==='object' ? module.exports : window);

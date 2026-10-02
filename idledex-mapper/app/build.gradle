@@ -10,8 +10,8 @@ android {
         applicationId 'com.fillipe.idledexcompanion'
         minSdk 24
         targetSdk 29
-        versionCode 26
-        versionName '2.3.0'
+        versionCode 27
+        versionName '2.3.1'
     }
 
     buildFeatures {
