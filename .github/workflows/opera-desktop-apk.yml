@@ -44,14 +44,6 @@ jobs:
           git checkout a030f552f452158a2db64fdb32b490fa19c0b48d
           chmod +x gradlew
 
-      - name: Download exact Opera One x64 installer
-        run: |
-          mkdir -p winlator-src/app/src/main/assets/opera
-          curl --fail --location --retry 4 --retry-delay 3 \
-            'https://get.geo.opera.com/pub/opera/desktop/136.0.6008.80/win/Opera_136.0.6008.80_Setup_x64.exe' \
-            -o winlator-src/app/src/main/assets/opera/OperaSetup.exe
-          echo '4f4593749f89c075f05a3d6102a970e866eb7df2c964e34465f8939299ef24dd  winlator-src/app/src/main/assets/opera/OperaSetup.exe' | sha256sum -c -
-
       - name: Patch Winlator into one-tap Opera Desktop app
         run: python3 opera-desktop-builder/patch_winlator.py
 
@@ -64,16 +56,16 @@ jobs:
       - name: Rename APK
         run: |
           mkdir -p output
-          cp winlator-src/app/build/outputs/apk/debug/app-debug.apk output/Opera-Desktop-Android.apk
-          sha256sum output/Opera-Desktop-Android.apk > output/SHA256.txt
-          ls -lh output/Opera-Desktop-Android.apk
+          cp winlator-src/app/build/outputs/apk/debug/app-debug.apk output/Opera-Desktop-Android-v1.1.apk
+          sha256sum output/Opera-Desktop-Android-v1.1.apk > output/SHA256.txt
+          ls -lh output/Opera-Desktop-Android-v1.1.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Opera-Desktop-Android
+          name: Opera-Desktop-Android-v1.1
           path: |
-            output/Opera-Desktop-Android.apk
+            output/Opera-Desktop-Android-v1.1.apk
             output/SHA256.txt
           if-no-files-found: error
           retention-days: 14
