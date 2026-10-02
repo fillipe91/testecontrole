@@ -1,0 +1,32 @@
+name: Verify signed IdleDex installation
+on:
+  push:
+    branches: [idledex-companion-v1]
+    paths: ['releases/idledex-companion-v2.3.0.apk']
+  workflow_dispatch:
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Test signed upgrade and navigation on Android 15
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: python3 idledex-mapper/scripts/emulator-smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: idledex-android-smoke
+          path: android-smoke/
+          retention-days: 7

@@ -317,3 +317,18 @@ Só considerar a próxima versão pronta quando:
 ## 16. Instrução para o Work
 
 Antes de editar código, leia esta documentação, abra a branch `idledex-companion-v1`, inspecione os arquivos principais e confira o mapa profundo. Depois faça o mapeamento ao vivo do IdleDex com login manual do usuário. Priorize corrigir a auditoria da Box e a identificação inequívoca dos Pokémon. Não execute transações destrutivas durante a investigação. Faça commits claros na branch e deixe o projeto compilando.
+
+
+## 17. Refatoração 2.3.0 / 26 — 2026-10-02
+
+Esta seção substitui as descrições antigas de navegação e atualização acima.
+- Início, Jogo e Minha Box compartilham uma Activity e um único WebView. MainActivity e CompanionHomeActivity são aliases de compatibilidade de SafeSellActivity; o dashboard/automação antigos foram retirados do fluxo.
+- O jogo só carrega ao abri-lo. Trocar de aba durante auditoria interrompe a leitura com resultado parcial, evitando consultar DOM oculto.
+- Relatório com busca, estados e paginação de 40 itens. Regras continuam permanentes; venda real não existe nesta versão.
+- Corrigido falso conflito entre cartão (locked=null) e detalhe (locked=false): snapshots de cartões são comparados separadamente; detalhes não protegidos são lidos em ambas as passadas e IV divergente resulta em inconsistência.
+- Atualizador baixa HTTPS em armazenamento privado, valida SHA-256, package/version e certificado da versão instalada. Pede autorização normal do Android e abre instalador com URI content somente leitura. Não abre links automaticamente.
+- IMPORTANTE: apksigner oficial rejeitou o APK 2.2.1 anterior por entradas sem assinatura JAR. A assinatura manual anterior era inválida. Usar SEMPRE apksigner oficial e verificar antes de publicar. O código antigo 2.2.1 foi reassinado com a chave original para teste de migração; seu payload não mudou.
+- 2.3.0 compilada pelo Actions run 37018393583, commit 51c97ec2e9807f7b755ca94f16dfc8628d11a9aa. Simulações Node (6 cenários) e regras Java passaram.
+- Certificado original SHA-256: 92:08:97:AA:55:7C:98:02:84:65:2D:6A:5A:D3:05:32:0F:A1:9A:B1:50:FB:DF:C7:3A:E5:B5:EE:5F:84:E4:D2. Segredos continuam fora do GitHub.
+- Pendente: simulação end-to-end autenticada da Box na conta real; a sessão da nuvem não estava aberta. Não considerar venda pronta. Times salvos/identidade no NPC e flags ausentes seguem conservadoramente em revisão.
+- Teste Android separado em idledex-install-check.yml instala versão 25 reparada, atualiza para 26, abre telas e captura screenshots sem autenticar jogo.
