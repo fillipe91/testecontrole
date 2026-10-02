@@ -1,7 +1,7 @@
 {
-  "versionCode": 23,
-  "versionName": "2.1.0",
+  "versionCode": 24,
+  "versionName": "2.2.0",
   "apkUrl": "https://drive.google.com/uc?export=download&id=1smIAP46DA-brmiBwxbYSZVRlwZO2_phY",
-  "sha256": "81a0b767e4b7943f033a6d4fca314b1db8f8a346d573bfbc3e0e68e727a7fa98",
-  "notes": "Novo Modo Venda Segura: proteção permanente do time ativo e times salvos, Shiny, Lendário/Mítico/Ultra Beast, Pokémon 4★/5★, evento, travados/favoritos, IV alto, exemplares únicos e melhores duplicatas. Inclui simulação, auditoria, revalidação por ID, dupla leitura, limite por ciclo, autorização temporária e parada de emergência."
+  "sha256": "b68558bd6b19f6dd1b736ff6963607ee920e6e51a8916afc90193cd38f0673b9",
+  "notes": "Auditoria da Box em SIMULAÇÃO com dupla leitura por data-creature e estados PROTEGIDO, REVISAR e CANDIDATO À VENDA. Proteções conservadoras e exibição dos motivos por Pokémon. Identidade no NPC Jessie e vínculo individual dos times salvos ainda não comprovados; venda real e soltura automática permanecem bloqueadas."
 }
