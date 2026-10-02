@@ -18,6 +18,9 @@ public class SafetyRules {
     public SafetyRules(Context context) {
         p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         init();
+        // Disable the older soltura route until identity is proven across Box and NPC views.
+        p.edit().putBoolean("simulation", true).putBoolean("autoRelease", false)
+                .putLong("armedUntil", 0L).apply();
     }
 
     private void init() {
@@ -66,8 +69,8 @@ public class SafetyRules {
     }
 
     public String preset() { return p.getString("preset", "Farm forte"); }
-    public boolean simulation() { return p.getBoolean("simulation", true); }
-    public boolean autoRelease() { return p.getBoolean("autoRelease", false); }
+    public boolean simulation() { return true; }
+    public boolean autoRelease() { return false; }
     public boolean autoScan() { return p.getBoolean("autoScan", false); }
     public boolean keepShiny() { return p.getBoolean("keepShiny", true); }
     public boolean protectLocked() { return p.getBoolean("protectLocked", true); }
@@ -77,7 +80,7 @@ public class SafetyRules {
     public int intervalMinutes() { return clamp(intPref("intervalMinutes", 10), 2, 120); }
     public int maxReleasesPerCycle() { return clamp(intPref("maxReleasesPerCycle", 3), 1, 20); }
     public long armedUntil() { return p.getLong("armedUntil", 0L); }
-    public boolean isArmed() { return !simulation() && autoRelease() && System.currentTimeMillis() < armedUntil(); }
+    public boolean isArmed() { return false; }
 
     public void setEmergencyStop(boolean on) {
         SharedPreferences.Editor e = p.edit().putBoolean("emergencyStop", on);
@@ -86,7 +89,7 @@ public class SafetyRules {
     }
 
     public void armForMinutes(int minutes) {
-        p.edit().putLong("armedUntil", System.currentTimeMillis() + clamp(minutes, 1, 30) * 60_000L).apply();
+        disarm();
     }
 
     public void disarm() { p.edit().putLong("armedUntil", 0L).apply(); }
@@ -96,8 +99,8 @@ public class SafetyRules {
                      String qualities, String species, int intervalMinutes, int maxReleases) {
         p.edit()
                 .putString("preset", "Personalizado")
-                .putBoolean("simulation", simulation)
-                .putBoolean("autoRelease", autoRelease)
+                .putBoolean("simulation", true)
+                .putBoolean("autoRelease", false)
                 .putBoolean("autoScan", autoScan)
                 .putBoolean("keepShiny", keepShiny)
                 .putBoolean("protectLocked", protectLocked)
@@ -108,7 +111,7 @@ public class SafetyRules {
                 .putString("intervalMinutes", String.valueOf(clamp(intervalMinutes,2,120)))
                 .putString("maxReleasesPerCycle", String.valueOf(clamp(maxReleases,1,20)))
                 .apply();
-        if (simulation || !autoRelease) disarm();
+        disarm();
     }
 
     public JSONObject toJson() {

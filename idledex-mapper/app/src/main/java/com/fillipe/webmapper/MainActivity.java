@@ -352,18 +352,15 @@ public class MainActivity extends Activity {
         AlertDialog dlg = new AlertDialog.Builder(this)
                 .setTitle("Central de Segurança")
                 .setView(scroll)
-                .setNeutralButton(rules.isArmed() ? "Desarmar" : "Armar 10 min", null)
+                .setNeutralButton("Soltura indisponível", null)
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Salvar", null)
                 .create();
         dlg.setOnShowListener(x -> {
             dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
-                if (rules.isArmed()) {
-                    rules.disarm();
-                    updateHeader();
-                    dlg.dismiss();
-                } else showArmDialog(dlg);
+                showArmDialog(dlg);
             });
+            dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(false);
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 int iv = clamp(parseInt(minIv.getText().toString(), rules.minIv()), 0, 186);
                 int mins = clamp(parseInt(interval.getText().toString(), rules.intervalMinutes()), 2, 120);
@@ -379,21 +376,7 @@ public class MainActivity extends Activity {
     }
 
     private void showArmDialog(AlertDialog parent) {
-        if (rules.simulation() || !rules.autoRelease()) {
-            Toast.makeText(this, "Primeiro desligue Simulação e ative 'Permitir soltura automática'.", Toast.LENGTH_LONG).show();
-            return;
-        }
-        new AlertDialog.Builder(this)
-                .setTitle("Armar ações destrutivas por 10 minutos?")
-                .setMessage("Mesmo armado, o Companion só solta após duas leituras iguais e todas as proteções passarem. Se houver dúvida, ele manda para a fila em vez de soltar.")
-                .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Armar", (d,w) -> {
-                    rules.setEmergencyStop(false);
-                    rules.armForMinutes(10);
-                    addLog("armed", "10min", null);
-                    updateHeader();
-                    parent.dismiss();
-                }).show();
+        Toast.makeText(this, "Soltura automática bloqueada: identidade dos Pokémon ainda não foi confirmada entre Box, equipe e destinos.", Toast.LENGTH_LONG).show();
     }
 
     private void toggleEmergencyStop() {
@@ -547,25 +530,6 @@ public class MainActivity extends Activity {
     return true;
   }
 
-  async function safeRelease(p,consistent){
-    if(!IdleAndroid.canRelease(JSON.stringify(p),consistent)) return false;
-    const root=modalRoot();
-    const release=exact('Soltar',root);
-    if(!release) return false;
-    release.click(); await sleep(500);
-    const dialogs=[...document.querySelectorAll('[role="dialog"],dialog,[aria-modal="true"],.modal')].filter(visible);
-    if(!dialogs.length){ IdleAndroid.pushStatus('Soltura cancelada: confirmação não apareceu.'); return false; }
-    const confirmRoot=dialogs[dialogs.length-1];
-    const confirmationText=low(confirmRoot.innerText||confirmRoot.textContent||'');
-    if(!confirmationText.includes('soltar') && !confirmationText.includes('liberar')) { IdleAndroid.pushStatus('Soltura cancelada: diálogo inesperado.'); return false; }
-    if(!IdleAndroid.canRelease(JSON.stringify(p),consistent)) { closeTop(); return false; }
-    const confirm=exact('Confirmar',confirmRoot)||exact('Soltar',confirmRoot)||exact('Sim',confirmRoot)||exact('Liberar',confirmRoot);
-    if(!confirm){ IdleAndroid.pushStatus('Soltura cancelada: botão final não reconhecido.'); return false; }
-    confirm.click(); await sleep(800);
-    IdleAndroid.onReleased(JSON.stringify(p));
-    return true;
-  }
-
   function pageFingerprint(){ const d=buttons().filter(el=>low(txt(el))==='detalhes'); return d.slice(0,12).map(el=>clean(el.parentElement?.innerText||'',220)).join('|')+'#'+d.length; }
 
   async function scanPage(processed){
@@ -583,7 +547,6 @@ public class MainActivity extends Activity {
       let decision={action:'QUEUE',reasons:['falha ao avaliar']};
       try{ decision=JSON.parse(IdleAndroid.evaluatePokemon(JSON.stringify(p2),consistent)); }catch(e){}
       IdleAndroid.onPokemon(JSON.stringify(p2),JSON.stringify(decision));
-      if(decision.action==='RELEASE') await safeRelease(p2,consistent);
       await sleep(250);
       closeTop(); await sleep(450);
     }
@@ -679,13 +642,8 @@ public class MainActivity extends Activity {
             catch (Exception e) { return "{\"action\":\"QUEUE\",\"reasons\":[\"erro de leitura\"]}"; }
         }
         @JavascriptInterface public boolean canRelease(String json, boolean consistent) {
-            try {
-                if (rules.emergencyStop()) return false;
-                JSONObject d = rules.evaluate(new JSONObject(json), consistent, releasedThisCycle);
-                boolean ok = "RELEASE".equals(d.optString("action"));
-                if (ok) addLog("release_authorized", "double-check", new JSONObject(json));
-                return ok;
-            } catch (Exception e) { return false; }
+            // Legacy release automation is unavailable while cross-surface identity is unproven.
+            return false;
         }
         @JavascriptInterface public void onPokemon(String json, String decisionJson) {
             try {

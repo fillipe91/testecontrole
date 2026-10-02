@@ -47,16 +47,16 @@ public class CompanionHomeActivity extends Activity {
         playBtn.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
         play.addView(playBtn); body.addView(play);
 
-        LinearLayout sell = card("Venda Segura", "Novo modo para separar Pokémon fracos sem arriscar seus times ou Pokémon valiosos.");
+        LinearLayout sell = card("Auditoria da Jessie", "Veja quem a Jessie aceitaria por silver. A auditoria é somente leitura e explica a proteção de cada Pokémon.");
         TextView hard = text("Proteção permanente: times ativos/salvos, Shiny, Lendário/Mítico, 4★/5★, evento, travados/favoritos, IV alto, únicos e melhores duplicatas.", Color.rgb(130,240,180), 13, true);
         hard.setPadding(0,0,0,dp(8));
         sell.addView(hard);
-        Button sellBtn = primary("Abrir Venda Segura", SAFE);
+        Button sellBtn = primary("Auditar Pokémon", SAFE);
         sellBtn.setOnClickListener(v -> startActivity(new Intent(this, SafeSellActivity.class)));
         sell.addView(sellBtn); body.addView(sell);
 
-        LinearLayout safety = card("Como a Venda Segura funciona", "Primeiro ela audita a Box inteira e cria uma fila. A venda real só é liberada depois de revalidar o Pokémon e todos os seus times novamente. Se qualquer informação estiver faltando ou mudar, a operação é cancelada.");
-        TextView safeInfo = text("Por padrão ela inicia em SIMULAÇÃO. Para vender de verdade, você precisa definir o preço, desligar a simulação e autorizar por 10 minutos.", Color.rgb(255,210,120), 13, true);
+        LinearLayout safety = card("Como a proteção funciona", "A Box fornece um ID por Pokémon, mas os times salvos e o balcão da Jessie não mostram o mesmo ID. Sem confirmar a identidade, o app mantém o Pokémon em Revisar e não faz uma venda.");
+        TextView safeInfo = text("SIMULAÇÃO permanente nesta versão. Nenhuma venda será executada.", Color.rgb(255,210,120), 13, true);
         safety.addView(safeInfo); body.addView(safety);
 
         LinearLayout updates = card("Atualizações", "Use este botão para procurar novas versões do Companion.");
