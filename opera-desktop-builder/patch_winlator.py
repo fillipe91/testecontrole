@@ -3,15 +3,14 @@ import re
 
 ROOT = Path("winlator-src")
 
-# Build as a separate Android app so it can coexist with Winlator.
 build_gradle = ROOT / "app/build.gradle"
 s = build_gradle.read_text(encoding="utf-8")
 s = s.replace("applicationId 'com.winlator'", "applicationId 'com.fillipe.operadesktop'")
-s = s.replace('versionName "11.2"', 'versionName "1.0"')
+s = s.replace('versionName "11.2"', 'versionName "1.1"')
+if 'signingConfigs {' not in s:
+    s = s.replace('android {\n', '''android {\n    signingConfigs {\n        debug {\n            v1SigningEnabled true\n            v2SigningEnabled true\n        }\n    }\n''', 1)
 build_gradle.write_text(s, encoding="utf-8")
 
-# Make launcher dedicated to Opera, keep the normal Winlator activity available internally,
-# and avoid FileProvider authority collision with an installed stock Winlator.
 manifest = ROOT / "app/src/main/AndroidManifest.xml"
 s = manifest.read_text(encoding="utf-8")
 s = s.replace('android:authorities="com.winlator.FileProvider"', 'android:authorities="${applicationId}.FileProvider"')
@@ -46,19 +45,14 @@ if old_activity not in s:
 s = s.replace(old_activity, new_activity)
 manifest.write_text(s, encoding="utf-8")
 
-# Avoid Android storage permission setup: the Opera payload is bundled in the APK.
 main_activity = ROOT / "app/src/main/java/com/winlator/MainActivity.java"
 s = main_activity.read_text(encoding="utf-8")
 pattern = re.compile(r'''    private boolean requestAppPermissions\(\) \{.*?\n    \}''', re.S)
-replacement = '''    private boolean requestAppPermissions() {
-        return false;
-    }'''
-s, n = pattern.subn(replacement, s, count=1)
+s, n = pattern.subn('''    private boolean requestAppPermissions() {\n        return false;\n    }''', s, count=1)
 if n != 1:
     raise SystemExit("Could not patch requestAppPermissions")
 main_activity.write_text(s, encoding="utf-8")
 
-# Allow an explicit command-line argument string with a direct executable launch.
 xserver = ROOT / "app/src/main/java/com/winlator/XServerDisplayActivity.java"
 s = xserver.read_text(encoding="utf-8")
 needle = '''            if (intent.hasExtra("exec_path")) {
@@ -76,15 +70,11 @@ if needle not in s:
 s = s.replace(needle, replacement, 1)
 xserver.write_text(s, encoding="utf-8")
 
-# Rename the app in every localization where the upstream literal is present.
 for strings in (ROOT / "app/src/main/res").glob("values*/strings.xml"):
     t = strings.read_text(encoding="utf-8")
     t = t.replace('<string name="app_name">Winlator</string>', '<string name="app_name">Opera Desktop</string>')
     strings.write_text(t, encoding="utf-8")
 
-# Dedicated launcher. On first run it waits for Winlator's RootFS, creates a private
-# container, copies the bundled official Opera installer, installs silently, then the
-# next launcher restart opens Opera itself. Later launches go directly to Opera.
 opera_activity = ROOT / "app/src/main/java/com/winlator/OperaMainActivity.java"
 opera_activity.write_text(r'''package com.winlator;
 
@@ -98,14 +88,16 @@ import com.winlator.xenvironment.RootFS;
 
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.concurrent.Executors;
 
 public class OperaMainActivity extends MainActivity {
     private static final String CONTAINER_NAME = "Opera Desktop";
-    private static final String ASSET_INSTALLER = "opera/OperaSetup.exe";
+    private static final String OPERA_URL = "https://get.geo.opera.com/pub/opera/desktop/136.0.6008.80/win/Opera_136.0.6008.80_Setup_x64.exe";
     private static final String INSTALL_ARGS = "/install /silent /launchopera=0 /setdefaultbrowser=0 /allusers=0 /desktopshortcut=0 /pintotaskbar=0";
     private static final String OPERA_ARGS = "--no-sandbox --disable-gpu";
     private volatile boolean flowStarted = false;
@@ -175,11 +167,12 @@ public class OperaMainActivity extends MainActivity {
                     return;
                 }
 
-                File installer = copyInstaller(container);
+                showInfo("Baixando o Opera pela primeira vez...");
+                File installer = downloadInstaller(container);
                 runOnUiThread(() -> launchWindowsFile(container, installer, INSTALL_ARGS));
             }
             catch (Throwable e) {
-                showError("Falha ao preparar o Opera: " + e.getMessage());
+                showError("Falha ao baixar/preparar o Opera: " + e.getMessage());
             }
         });
     }
@@ -189,24 +182,37 @@ public class OperaMainActivity extends MainActivity {
         File[] candidates = new File[] {
             new File(driveC, "Opera/launcher.exe"),
             new File(driveC, "Opera/opera.exe"),
-            new File(driveC, "users/" + com.winlator.xenvironment.RootFS.USER + "/AppData/Local/Programs/Opera/launcher.exe"),
-            new File(driveC, "users/" + com.winlator.xenvironment.RootFS.USER + "/AppData/Local/Programs/Opera/opera.exe")
+            new File(driveC, "users/" + RootFS.USER + "/AppData/Local/Programs/Opera/launcher.exe"),
+            new File(driveC, "users/" + RootFS.USER + "/AppData/Local/Programs/Opera/opera.exe")
         };
         for (File f : candidates) if (f.isFile()) return f;
         return null;
     }
 
-    private File copyInstaller(Container container) throws Exception {
+    private File downloadInstaller(Container container) throws Exception {
         File dst = new File(container.getRootDir(), ".wine/drive_c/OperaSetup.exe");
         if (dst.isFile() && dst.length() > 100_000_000L) return dst;
         File parent = dst.getParentFile();
         if (parent != null) parent.mkdirs();
-        try (InputStream in = getAssets().open(ASSET_INSTALLER);
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(OPERA_URL).openConnection();
+        connection.setConnectTimeout(30000);
+        connection.setReadTimeout(120000);
+        connection.setInstanceFollowRedirects(true);
+        connection.connect();
+        int code = connection.getResponseCode();
+        if (code < 200 || code >= 400) throw new IllegalStateException("HTTP " + code);
+
+        try (BufferedInputStream in = new BufferedInputStream(connection.getInputStream());
              FileOutputStream out = new FileOutputStream(dst)) {
             byte[] buffer = new byte[1024 * 1024];
             int count;
             while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
         }
+        finally {
+            connection.disconnect();
+        }
+        if (!dst.isFile() || dst.length() < 100_000_000L) throw new IllegalStateException("download incompleto");
         return dst;
     }
 
@@ -218,10 +224,14 @@ public class OperaMainActivity extends MainActivity {
         startActivity(intent);
     }
 
+    private void showInfo(String message) {
+        runOnUiThread(() -> Toast.makeText(this, message, Toast.LENGTH_LONG).show());
+    }
+
     private void showError(String message) {
         runOnUiThread(() -> Toast.makeText(this, message, Toast.LENGTH_LONG).show());
     }
 }
 ''', encoding="utf-8")
 
-print("Winlator patched for Opera Desktop wrapper")
+print("Winlator patched for slim Opera Desktop wrapper")
