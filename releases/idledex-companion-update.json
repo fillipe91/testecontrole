@@ -1,7 +1,7 @@
 {
-  "versionCode": 25,
-  "versionName": "2.2.1",
-  "apkUrl": "https://raw.githubusercontent.com/fillipe91/testecontrole/idledex-companion-v1/releases/idledex-companion-v2.2.1.apk",
-  "sha256": "6cdbb245d3a4a645d9528acd4f64e292649d59c5c5b8d0dd5fc530c8fa33eed2",
-  "notes": "Auditoria mais rápida da Box: lê os IDs atuais sem catálogo permanente, confere a Box em uma segunda passada e evita abrir detalhes de Pokémon já protegidos. SIMULAÇÃO somente leitura; a venda permanece bloqueada enquanto IDs de times salvos e da Jessie não forem comprovados."
+  "versionCode": 26,
+  "versionName": "2.3.0",
+  "apkUrl": "https://raw.githubusercontent.com/fillipe91/testecontrole/idledex-companion-v1/releases/idledex-companion-v2.3.0.apk",
+  "sha256": "96f0f4d066c4e3ef6e6d85c24033a596f82857a1f8864ddc7eb1ce04807f7f89",
+  "notes": "Interface simplificada com Início, Jogo e Minha Box no mesmo navegador. Correção de comparação da auditoria, dupla leitura de detalhes e atualização com download e validação do APK. Assinatura Android corrigida com a chave original. SIMULAÇÃO: venda real permanece bloqueada."
 }

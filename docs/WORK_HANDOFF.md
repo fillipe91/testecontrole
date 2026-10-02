@@ -332,3 +332,5 @@ Esta seção substitui as descrições antigas de navegação e atualização ac
 - Certificado original SHA-256: 92:08:97:AA:55:7C:98:02:84:65:2D:6A:5A:D3:05:32:0F:A1:9A:B1:50:FB:DF:C7:3A:E5:B5:EE:5F:84:E4:D2. Segredos continuam fora do GitHub.
 - Pendente: simulação end-to-end autenticada da Box na conta real; a sessão da nuvem não estava aberta. Não considerar venda pronta. Times salvos/identidade no NPC e flags ausentes seguem conservadoramente em revisão.
 - Teste Android separado em idledex-install-check.yml instala versão 25 reparada, atualiza para 26, abre telas e captura screenshots sem autenticar jogo.
+
+Validação Android concluída: Actions run 37018926935, Android 15/API35. Instalou APK 2.2.1 com assinatura reparada e atualizou por cima para 2.3.0; abriu Início, Minha Box e Regras, voltou ao Início e não apresentou crash. Screenshots no artifact idledex-android-smoke. Isso não substitui validação da Box autenticada nem teste no aparelho do usuário. SHA-256 APK 2.3.0: 96f0f4d066c4e3ef6e6d85c24033a596f82857a1f8864ddc7eb1ce04807f7f89. Manifesto publicado após teste bem-sucedido.
