@@ -106,8 +106,8 @@ import java.util.concurrent.Executors;
 public class OperaMainActivity extends MainActivity {
     private static final String CONTAINER_NAME = "Opera Desktop";
     private static final String ASSET_INSTALLER = "opera/OperaSetup.exe";
-    private static final String INSTALL_ARGS = "/install /silent /launchopera=0 /setdefaultbrowser=0 /allusers=0 /installfolder=\\\"C:\\\\Opera\\\" /desktopshortcut=0 /pintotaskbar=0";
-    private static final String OPERA_ARGS = "--no-sandbox --disable-gpu --disable-gpu-compositing";
+    private static final String INSTALL_ARGS = "/install /silent /launchopera=0 /setdefaultbrowser=0 /allusers=0 /desktopshortcut=0 /pintotaskbar=0";
+    private static final String OPERA_ARGS = "--no-sandbox --disable-gpu";
     private volatile boolean flowStarted = false;
 
     @Override
