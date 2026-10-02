@@ -22,10 +22,10 @@
   }
   async function firstPage(){for(let i=0;i<250 && R.page().number>1;i++){check();let n=R.page().number;R.box().querySelector('[aria-label="Página anterior"]').click();await waitFor(()=>R.page().number===n-1,'Página anterior não respondeu.');}if(R.page().number!==1)throw Error('Primeira página não confirmada.');}
   async function pass(round,readDetails){
-    R.assertAutoPaused();await firstPage();R.assertUnfiltered();const initial=R.page(), team=R.teams(), rows=[], ids=new Set();
+    R.assertAutoPaused();await firstPage();R.assertUnfiltered();const initial=R.page(), team=R.teams(), rows=[], cards=new Map(), ids=new Set();
     const saved=savedSpecies(team);
     const add=async id=>{if(ids.has(id))throw Error('ID repetido entre páginas/equipe.');ids.add(id);check();
-      let p=R.card(id);p.savedSpecies=saved.has(String(p.speciesKey||''));
+      let p=R.card(id);cards.set(id,cardSignature(p));p.savedSpecies=saved.has(String(p.speciesKey||''));
       // Cards with a visible permanent protection do not need an expensive detail popup.
       // We still re-read every card and its current instance ID on pass two.
       if(readDetails&&!alreadyProtected(p))try{p=await read(id);p.savedSpecies=saved.has(String(p.speciesKey||''));}catch(e){check();p.readError=String(e.message||e);}
@@ -46,7 +46,7 @@
     const end=R.page();
     if(end.total!==initial.total || rows.length!==initial.total || team.active.some(id=>!ids.has(id)) || JSON.stringify(team)!==JSON.stringify(R.teams()))
       throw Error('Box mudou ou um Pokémon da equipe ativa não corresponde a um ID da Box.');
-    return {rows,team,total:initial.total,pages:initial.pages};
+    return {rows,cards,team,total:initial.total,pages:initial.pages};
   }
   async function start(runToken){
     if(running)return;running=true;cancelled=false;token=runToken;
@@ -55,11 +55,11 @@
       if(!document.querySelector('.eb-modal')){const b=[...document.querySelectorAll('button')].filter(e=>e.textContent.trim()==='Box');if(b.length!==1)throw Error('Abra a Box manualmente.');b[0].click();await waitFor(()=>!!document.querySelector('.eb-modal'),'Box não abriu.');}
       const filters=R.box().querySelector('[data-testid="creature-filters-toggle"]');if(filters?.getAttribute('aria-expanded')==='false'){filters.click();await sleep(150);}
       R.assertUnfiltered();send('status',{message:'Leitura 1 de 2 · verificando cada ID'});
-      const a=await pass(1,true);send('status',{message:'Leitura 2 de 2 · conferindo os IDs atuais sem reabrir cada detalhe'});const b=await pass(2,false);
+      const a=await pass(1,true);send('status',{message:'Leitura 2 de 2 · confirmando cartões e detalhes'});const b=await pass(2,true);
       const first=new Map(a.rows.map(p=>[p.id,p]));
-      const stable=a.total===b.total && a.rows.length===b.rows.length && JSON.stringify(a.team)===JSON.stringify(b.team) && b.rows.every(p=>first.has(p.id)&&cardSignature(first.get(p.id))===cardSignature(p));
+      const stable=a.total===b.total && a.rows.length===b.rows.length && JSON.stringify(a.team)===JSON.stringify(b.team) && b.rows.every(p=>first.has(p.id)&&a.cards.get(p.id)===b.cards.get(p.id));
       const second=new Map(b.rows.map(p=>[p.id,p]));
-      check();send('complete',{rows:a.rows.map(p=>({pokemon:p,consistent:stable&&second.has(p.id)&&cardSignature(p)===cardSignature(second.get(p.id))})),complete:stable,teams:b.team,pages:b.pages,total:b.total});
+      check();send('complete',{rows:a.rows.map(p=>({pokemon:p,consistent:stable&&second.has(p.id)&&R.signature(p)===R.signature(second.get(p.id))&&!p.readError&&!second.get(p.id).readError})),complete:stable,teams:b.team,pages:b.pages,total:b.total});
     }catch(e){send('error',{message:String(e.message||e)});}finally{running=false;}
   }
   window.IdleBoxAudit={start,stop:()=>{cancelled=true;}};

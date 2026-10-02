@@ -13,6 +13,7 @@
         <activity
             android:name=".CompanionHomeActivity"
             android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:screenOrientation="unspecified">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -23,11 +24,14 @@
         <activity
             android:name=".MainActivity"
             android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:screenOrientation="unspecified" />
 
         <activity
             android:name=".SafeSellActivity"
             android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:screenOrientation="unspecified" />
+        <provider android:name=".UpdateProvider" android:authorities="${applicationId}.updates" android:exported="false" android:grantUriPermissions="true" />
     </application>
 </manifest>

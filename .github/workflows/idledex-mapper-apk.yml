@@ -42,6 +42,9 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Test read-only Box audit simulations
+        run: node --test idledex-mapper/tests/*.test.cjs
+
       - name: Build unsigned release APK
         working-directory: idledex-mapper
         run: gradle :app:testDebugUnitTest :app:assembleRelease --stacktrace
@@ -53,3 +56,11 @@ jobs:
           path: idledex-mapper/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Upload public Android APK verification tool
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apksigner
+          path: /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar
+          if-no-files-found: error
+          retention-days: 3
