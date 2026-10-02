@@ -1,7 +1,7 @@
 {
-  "versionCode": 26,
-  "versionName": "2.3.0",
-  "apkUrl": "https://raw.githubusercontent.com/fillipe91/testecontrole/idledex-companion-v1/releases/idledex-companion-v2.3.0.apk",
-  "sha256": "96f0f4d066c4e3ef6e6d85c24033a596f82857a1f8864ddc7eb1ce04807f7f89",
-  "notes": "Interface simplificada com Início, Jogo e Minha Box no mesmo navegador. Correção de comparação da auditoria, dupla leitura de detalhes e atualização com download e validação do APK. Assinatura Android corrigida com a chave original. SIMULAÇÃO: venda real permanece bloqueada."
+  "versionCode": 27,
+  "versionName": "2.3.1",
+  "apkUrl": "https://raw.githubusercontent.com/fillipe91/testecontrole/idledex-companion-v1/releases/idledex-companion-v2.3.1.apk",
+  "sha256": "d7db7610f109078b6e58775d2b52b3a33903d6bd3a7ffdee234db7db9e018ea9",
+  "notes": "Corrige a identificação do AUTO pausado. Se o estado não puder ser confirmado, a leitura da Box pode continuar em simulação, com auditoria incompleta e sem candidatos à venda. AUTO ligado continua bloqueando a análise."
 }
