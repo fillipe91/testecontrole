@@ -19,7 +19,7 @@
   }
   async function firstPage(){for(let i=0;i<250 && R.page().number>1;i++){check();let n=R.page().number;R.box().querySelector('[aria-label="Página anterior"]').click();await waitFor(()=>R.page().number===n-1,'Página anterior não respondeu.');}if(R.page().number!==1)throw Error('Primeira página não confirmada.');}
   async function pass(round){
-    await firstPage();R.assertUnfiltered();const initial=R.page(), team=R.teams(), rows=[], ids=new Set();
+    R.assertAutoPaused();await firstPage();R.assertUnfiltered();const initial=R.page(), team=R.teams(), rows=[], ids=new Set();
     const add=async id=>{if(ids.has(id))throw Error('ID repetido entre páginas/equipe.');ids.add(id);check();
       let p;try{p=await read(id);}catch(e){check();p=R.card(id);p.readError=String(e.message||e);}
       rows.push(p);send('item',{round,pokemon:p});};
@@ -27,7 +27,7 @@
     if(initial.total>0 && pageSize===0)throw Error('Box informa Pokémon, mas não mostra cartões na primeira página.');
     if(initial.ids.some(id=>!id) || new Set(initial.ids).size!==initial.ids.length)throw Error('ID ausente ou repetido nos cartões da Box.');
     for(let n=1;n<=initial.pages;n++){
-      check();R.assertUnfiltered();const current=R.page();
+      check();R.assertAutoPaused();R.assertUnfiltered();const current=R.page();
       if(current.number!==n || current.total!==initial.total || current.pages!==initial.pages)throw Error('Coleção mudou durante a leitura. Refaça a auditoria.');
       const expected=Math.min(pageSize,initial.total-(n-1)*pageSize);
       if(current.ids.length!==expected)throw Error('Quantidade de cartões diverge da página.');
@@ -44,6 +44,7 @@
   async function start(runToken){
     if(running)return;running=true;cancelled=false;token=runToken;
     try{
+      R.assertAutoPaused();
       if(!document.querySelector('.eb-modal')){const b=[...document.querySelectorAll('button')].filter(e=>e.textContent.trim()==='Box');if(b.length!==1)throw Error('Abra a Box manualmente.');b[0].click();await waitFor(()=>!!document.querySelector('.eb-modal'),'Box não abriu.');}
       const filters=R.box().querySelector('[data-testid="creature-filters-toggle"]');if(filters?.getAttribute('aria-expanded')==='false'){filters.click();await sleep(150);}
       R.assertUnfiltered();send('status',{message:'Leitura 1 de 2 · verificando cada ID'});

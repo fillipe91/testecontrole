@@ -8,6 +8,12 @@
     if (all.length !== 1) throw Error('Abra Equipe & Box. Painel único não encontrado.');
     return all[0];
   }
+  function assertAutoPaused() {
+    const toggles=[...document.querySelectorAll('[aria-label="Desativar modo automático"]')];
+    if(toggles.length!==1) throw Error('Não foi possível confirmar o estado do AUTO. Pause-o manualmente antes da auditoria.');
+    const e=toggles[0], checked=e.checked===true || e.getAttribute('aria-checked')==='true' || e.getAttribute('data-state')==='checked';
+    if(checked) throw Error('O AUTO está ligado e pode mudar a Box durante a leitura. Pause-o manualmente e tente novamente.');
+  }
   function page() {
     const root = box(), p = text(root.querySelector('.eb-pager-info')).match(/^(\d+)\s*\/\s*(\d+)$/);
     const cap = text([...root.querySelectorAll('.eb-title')].find(e => /^Box\s*\(/.test(text(e)))).match(/Box\s*\((\d+)\/(\d+)\)/);
@@ -78,5 +84,5 @@
     if(filters.length!==9 || filters.some(e=>text(e.querySelector('.ui-select-value'))!=='Todas')) throw Error('Limpe todos os filtros antes de auditar.');
     if(text(controls.querySelector('[aria-label="Ordenar a Box"] .ui-select-value'))!=='Ordem da Box') throw Error('Escolha Ordem da Box antes de auditar.');
   }
-  scope.IdleBoxReader={box,page,teams,card,detail,signature,assertUnfiltered};
+  scope.IdleBoxReader={box,page,teams,card,detail,signature,assertUnfiltered,assertAutoPaused};
 })(typeof module==='object' ? module.exports : window);
