@@ -50,6 +50,10 @@ public class AppUpdater {
 
                 String apkUrl = m.getString("apkUrl");
                 String notes = m.optString("notes", "");
+                if (!userInitiated) {
+                    status("Versão " + latestName + " disponível. Toque em Verificar atualização para abrir a instalação.");
+                    return;
+                }
                 status("Nova versão " + latestName + " encontrada" + (notes.isEmpty() ? "." : ": " + notes));
 
                 Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl));

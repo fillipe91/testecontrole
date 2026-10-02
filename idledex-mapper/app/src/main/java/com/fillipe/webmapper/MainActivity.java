@@ -82,7 +82,11 @@ public class MainActivity extends Activity {
         @Override public void run() {
             try {
                 updateHeader();
-                if (pageReady && rules.autoScan() && !rules.emergencyStop()) {
+                // Background scans used to force the hidden WebView onscreen via
+                // startBoxScan(), which looked like the app was navigating by itself.
+                // Only run a scheduled scan while the user is already in the game.
+                if (pageReady && webView != null && webView.getVisibility() == View.VISIBLE
+                        && rules.autoScan() && !rules.emergencyStop()) {
                     long due = rules.intervalMinutes() * 60_000L;
                     if (System.currentTimeMillis() - lastAutoScanAt >= due) {
                         lastAutoScanAt = System.currentTimeMillis();

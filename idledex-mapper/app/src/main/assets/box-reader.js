@@ -19,6 +19,7 @@
   function teams() {
     const root=box(), shelf=root.querySelector('.preset-shelf');
     const active=[...root.querySelectorAll('.eb-row:not(.eb-boxdrop) button[data-creature]')].map(e=>e.getAttribute('data-creature'));
+    if(active.some(id=>!id) || new Set(active).size!==active.length) throw Error('IDs da equipe ativa ausentes ou repetidos.');
     const saved=shelf ? [...shelf.querySelectorAll('.preset-card')].map(c=>({
       name:text(c.querySelector('.preset-name')),
       sprites:[...c.querySelectorAll('.preset-sprite')].filter(e=>e.style.backgroundImage).map(e=>({title:e.title||'',sprite:e.style.backgroundImage})),
@@ -28,7 +29,9 @@
     return {active, saved, complete:false, reason:'Times salvos não expõem IDs individuais; vínculo não confirmado.'};
   }
   function card(id) {
-    const root=box(), matches=[...root.querySelectorAll('button[data-creature]')].filter(e=>e.getAttribute('data-creature')===id);
+    // data-creature is the stable instance ID and can be rendered once in the
+    // active party and again in the Box. The Box card is the canonical record.
+    const root=box(), matches=[...root.querySelectorAll('.eb-boxdrop button[data-creature]')].filter(e=>e.getAttribute('data-creature')===id);
     if(matches.length!==1 || !id) throw Error('ID ausente ou duplicado na página.');
     const e=matches[0], name=e.querySelector('.eb-name'), star=e.querySelector('.eb-mark-tl [data-stars]'), sprite=e.querySelector('.eb-sprite');
     const image=sprite?.style.backgroundImage||'', dex=image.match(/\/sprites\/poke\/(\d+)(s?)\.png/);
@@ -41,7 +44,7 @@
       locked:flags.some(s=>/Travado pelo dono|Seu inicial|travado até/i.test(s))?true:null,
       favorite:null, event:null, special:null, // not observable: unknown is NOT false
       listed:flags.some(s=>s==='À venda no mercado'),
-      inTeam:!e.hasAttribute('data-dropbox'), level:Number(text(e.querySelector('.eb-sub')).match(/^Lv(\d+)/)?.[1])||null,
+      inTeam:teams().active.includes(id), level:Number(text(e.querySelector('.eb-sub')).match(/^Lv(\d+)/)?.[1])||null,
       iv:null, ivs:null, nature:null, detailVerified:false, crossSurfaceIdentity:false};
   }
   function detail(id) {
@@ -67,7 +70,7 @@
   }
   function assertUnfiltered() {
     const root=box(), controls=root.querySelector('.eb-box-controls');
-    if(!controls || controls.querySelector('input')?.value || controls.querySelector('.eb-shiny-toggle')?.getAttribute('aria-pressed')!=='false' ||
+    if(!controls || [...controls.querySelectorAll('input')].some(e=>e.value.trim()) || controls.querySelector('.eb-shiny-toggle')?.getAttribute('aria-pressed')!=='false' ||
        controls.querySelector('[data-testid="bulk-toggle"]')?.getAttribute('aria-pressed')!=='false') throw Error('Limpe busca, Shiny e seleção múltipla antes de auditar.');
     const panel=controls.querySelector('[data-testid="creature-filters-panel"]');
     if(!panel) throw Error('Expanda Filtros para confirmar que a Box está sem filtros.');

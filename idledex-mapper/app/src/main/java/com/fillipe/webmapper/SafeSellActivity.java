@@ -26,7 +26,7 @@ public class SafeSellActivity extends Activity {
     private LinearLayout list,body;
     private ScrollView report;
     private TextView status,counts;
-    private Button audit;
+    private Button audit,gameTab,resultsTab,stopButton;
     private volatile String runToken="";
     private boolean running=false,complete=false;
     private String filter="ALL",query="";
@@ -38,21 +38,27 @@ public class SafeSellActivity extends Activity {
         super.onCreate(state);rules=new SaleSafetyRules(this);
         getWindow().setStatusBarColor(BG);getWindow().setNavigationBarColor(BG);
         LinearLayout root=column();root.setBackgroundColor(BG);root.setPadding(dp(14),dp(10),dp(14),0);
-        LinearLayout head=new LinearLayout(this);TextView title=text("Venda Segura",24,INK,true);head.addView(title,new LinearLayout.LayoutParams(0,-2,1));
-        Button stop=button("PARAR",0xff653d4d);stop.setOnClickListener(v->stop("Auditoria parada. Nenhuma venda foi executada."));head.addView(stop);root.addView(head);
-        TextView tag=text("SIMULAÇÃO  ·  NPC JESSIE",12,GREEN,true);tag.setPadding(0,dp(4),0,dp(8));root.addView(tag);
-        status=text("Audite sua coleção. Nada será vendido ou selecionado no NPC.",13,MUTED,false);root.addView(status);
+        LinearLayout head=new LinearLayout(this);head.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        Button back=button("‹ Início",PANEL);back.setOnClickListener(v->finish());head.addView(back);
+        TextView title=text("Auditoria Jessie",21,INK,true);title.setPadding(dp(10),0,0,0);head.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+        stopButton=button("Parar",0xff653d4d);stopButton.setEnabled(false);stopButton.setOnClickListener(v->stop("Leitura parada. Nada foi vendido."));head.addView(stopButton);root.addView(head);
+        TextView tag=text("SIMULAÇÃO · somente leitura",12,GREEN,true);tag.setPadding(0,dp(4),0,dp(8));root.addView(tag);
+        status=text("1. Entre no jogo e abra Equipe & Box.  2. Toque em Analisar Box.",13,MUTED,false);root.addView(status);
         counts=text("0 encontrados",14,INK,true);counts.setPadding(0,dp(9),0,dp(6));root.addView(counts);
-        LinearLayout actions=new LinearLayout(this);audit=button("Auditar Box",0xff245886);Button game=button("Jogo",PANEL), results=button("Resultado",PANEL), settings=button("Regras",PANEL);
-        for(Button b:new Button[]{audit,game,results,settings}){LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(44),1);lp.setMargins(dp(2),0,dp(2),0);actions.addView(b,lp);}root.addView(actions);
-        audit.setOnClickListener(v->start());game.setOnClickListener(v->showGame(true));results.setOnClickListener(v->{showGame(false);render();});settings.setOnClickListener(v->settings());
+        LinearLayout tabs=new LinearLayout(this);
+        gameTab=button("1 · Jogo",BLUE);resultsTab=button("2 · Resultados",PANEL);
+        for(Button b:new Button[]{gameTab,resultsTab}){LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(46),1);lp.setMargins(dp(3),0,dp(3),dp(8));tabs.addView(b,lp);}root.addView(tabs);
+        gameTab.setOnClickListener(v->showGame(true));
+        resultsTab.setOnClickListener(v->{showGame(false);render();});
+        audit=button("Analisar Box",0xff245886);root.addView(audit,new LinearLayout.LayoutParams(-1,dp(48)));audit.setOnClickListener(v->start());
+        Button settings=button("Regras de proteção",PANEL);root.addView(settings,new LinearLayout.LayoutParams(-1,dp(44)));settings.setOnClickListener(v->settings());
         web=new WebView(this);web.setBackgroundColor(BG);web.getSettings().setJavaScriptEnabled(true);web.getSettings().setDomStorageEnabled(true);web.getSettings().setSupportMultipleWindows(false);
         web.getSettings().setAllowFileAccess(false);web.getSettings().setAllowContentAccess(false);web.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         CookieManager.getInstance().setAcceptCookie(true);CookieManager.getInstance().setAcceptThirdPartyCookies(web,true);
         web.addJavascriptInterface(new Bridge(),"IdleSell");web.setWebChromeClient(new WebChromeClient());
         web.setWebViewClient(new WebViewClient(){
             @Override public void onPageStarted(WebView v,String url,android.graphics.Bitmap icon){invalidate();status.setText("Carregando jogo…");}
-            @Override public void onPageFinished(WebView v,String url){if(isGame(url)){inject();status.setText("Faça login, se necessário, e toque em Auditar Box.");}else status.setText("Conclua o login no jogo.");}
+            @Override public void onPageFinished(WebView v,String url){if(isGame(url)){inject();status.setText("Jogo carregado. Entre se necessário e abra Equipe & Box.");}else status.setText("Continue o login no jogo; a auditoria só começa quando você tocar em Analisar Box.");}
         });
         root.addView(web,new LinearLayout.LayoutParams(-1,0,1));
         report=new ScrollView(this);body=column();body.setPadding(0,dp(12),0,dp(20));report.addView(body);root.addView(report,new LinearLayout.LayoutParams(-1,0,1));
@@ -61,15 +67,15 @@ public class SafeSellActivity extends Activity {
     private boolean isGame(String url){try{Uri u=Uri.parse(url);return "https".equals(u.getScheme())&&"idledex.com".equals(u.getHost())&&"/play".equals(u.getPath());}catch(Exception e){return false;}}
     private String readAsset(String name)throws Exception{try(java.io.InputStream in=getAssets().open(name);java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1)out.write(b,0,n);return new String(out.toByteArray(),StandardCharsets.UTF_8);}}
     private void inject(){try{String reader=readAsset("box-reader.js"),driver=readAsset("box-audit.js");web.evaluateJavascript(reader+"\n"+driver,null);}catch(Exception e){status.setText("Não foi possível carregar a auditoria.");}}
-    private void invalidate(){runToken="";running=false;complete=false;rules.disarm();if(audit!=null)audit.setEnabled(true);}
+    private void invalidate(){runToken="";running=false;complete=false;rules.disarm();if(audit!=null)audit.setEnabled(true);if(stopButton!=null)stopButton.setEnabled(false);}
     private void stop(String message){if(web!=null)web.evaluateJavascript("window.IdleBoxAudit?.stop();",null);rules.setEmergencyStop(true);invalidate();status.setText(message);render();}
     private void start(){
-        if(running)return;if(!isGame(web.getUrl())){status.setText("Entre em idledex.com/play primeiro.");showGame(true);return;}
-        rules.setEmergencyStop(false);rows.clear();complete=false;teams=new JSONObject();running=true;runToken=UUID.randomUUID().toString();audit.setEnabled(false);counts.setText("Iniciando leitura 1 de 2…");showGame(true);
+        if(running)return;if(!isGame(web.getUrl())){status.setText("O jogo ainda está carregando. Aguarde e tente novamente.");showGame(true);return;}
+        rules.setEmergencyStop(false);rows.clear();complete=false;teams=new JSONObject();running=true;runToken=UUID.randomUUID().toString();audit.setEnabled(false);stopButton.setEnabled(true);counts.setText("Lendo Box · etapa 1 de 2…");showGame(true);
         status.setText("Mantenha o jogo aberto. Não altere Box ou times durante a auditoria.");
         web.evaluateJavascript("window.IdleBoxAudit ? (window.IdleBoxAudit.start("+JSONObject.quote(runToken)+"),true) : false",result->{if(!"true".equals(result))stop("Auditoria indisponível. Reabra o jogo e tente novamente.");});
     }
-    private void showGame(boolean yes){web.setVisibility(yes?View.VISIBLE:View.GONE);report.setVisibility(yes?View.GONE:View.VISIBLE);}
+    private void showGame(boolean yes){web.setVisibility(yes?View.VISIBLE:View.GONE);report.setVisibility(yes?View.GONE:View.VISIBLE);if(gameTab!=null)gameTab.setBackgroundColor(yes?BLUE:PANEL);if(resultsTab!=null)resultsTab.setBackgroundColor(yes?PANEL:BLUE);}
     private void buildReport(){
         LinearLayout info=card();info.addView(text("Se houver dúvida, fica com você.",18,INK,true));
         info.addView(text("A Jessie compra Pokémon por silver. Seus cartões e os times salvos não fornecem IDs individuais verificáveis. Esta versão apenas analisa; venda real está bloqueada.",13,MUTED,false));
@@ -127,8 +133,8 @@ public class SafeSellActivity extends Activity {
                 if(kind.equals("item")){JSONObject p=o.getJSONObject("pokemon");String id=p.getString("id");JSONObject row=new JSONObject().put("pokemon",p).put("consistent",false);rows.put(id,row);counts.setText(rows.size()+" encontrados · leitura "+o.optInt("round")+" de 2");}
                 else if(kind.equals("progress"))status.setText("Leitura "+o.optInt("round")+"/2 · página "+o.optInt("page")+"/"+o.optInt("pages"));
                 else if(kind.equals("status"))status.setText(o.optString("message"));
-                else if(kind.equals("complete")){JSONArray arr=o.getJSONArray("rows");rows.clear();boolean duplicate=false;for(int i=0;i<arr.length();i++){JSONObject row=arr.getJSONObject(i);String id=row.getJSONObject("pokemon").getString("id");if(rows.put(id,row)!=null)duplicate=true;}complete=o.optBoolean("complete")&&!duplicate;teams=o.getJSONObject("teams");running=false;runToken="";audit.setEnabled(true);status.setText(complete?"Dupla leitura concluída. Venda real bloqueada: IDs do NPC/times não verificados.":"Coleção mudou. Resultado para revisão; refaça a auditoria.");showGame(false);render();}
-                else if(kind.equals("error")){invalidate();status.setText(o.optString("message"));showGame(false);render();}
+                else if(kind.equals("complete")){JSONArray arr=o.getJSONArray("rows");rows.clear();boolean duplicate=false;for(int i=0;i<arr.length();i++){JSONObject row=arr.getJSONObject(i);String id=row.getJSONObject("pokemon").getString("id");if(rows.put(id,row)!=null)duplicate=true;}complete=o.optBoolean("complete")&&!duplicate;teams=o.getJSONObject("teams");running=false;runToken="";audit.setEnabled(true);stopButton.setEnabled(false);status.setText(complete?"Leitura concluída. Toque em Resultados para ver cada Pokémon e o motivo.":"A Box mudou durante a leitura. Veja Resultados; tudo ficou para Revisar.");render();}
+                else if(kind.equals("error")){invalidate();stopButton.setEnabled(false);status.setText(o.optString("message")+" Nada foi vendido.");render();}
             }catch(Exception e){stop("Erro ao ler auditoria. Venda permanece bloqueada.");}});
         }
     }
